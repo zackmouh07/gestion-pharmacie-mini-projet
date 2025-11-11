@@ -1,48 +1,38 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
 import { authClient } from "@/lib/auth-client"
 import { toast } from "sonner"
-import { Loader2, UserPlus, Pill } from "lucide-react"
+import { Loader2, User, Lock, UserPlus, ArrowRight } from "lucide-react"
+import Link from "next/link"
 
 export default function RegisterPage() {
   const router = useRouter()
   const [isLoading, setIsLoading] = useState(false)
   const [formData, setFormData] = useState({
-    nom: "",
-    prenom: "",
+    firstname: "",
+    lastname: "",
     password: "",
     confirmPassword: "",
   })
   const [generatedUsername, setGeneratedUsername] = useState("")
 
-  const generateUsername = (nom: string, prenom: string) => {
-    const username = (nom + prenom).toLowerCase().replace(/\s+/g, "")
+  useEffect(() => {
+    // Generate username automatically when firstname or lastname changes
+    const username = (formData.firstname.toLowerCase() + formData.lastname.toLowerCase()).replace(/\s+/g, "")
     setGeneratedUsername(username)
-    return username
-  }
-
-  const handleInputChange = (field: string, value: string) => {
-    setFormData(prev => ({ ...prev, [field]: value }))
-    
-    if (field === "nom" || field === "prenom") {
-      const updatedData = { ...formData, [field]: value }
-      if (updatedData.nom && updatedData.prenom) {
-        generateUsername(updatedData.nom, updatedData.prenom)
-      }
-    }
-  }
+  }, [formData.firstname, formData.lastname])
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-
-    if (!formData.nom || !formData.prenom) {
-      toast.error("Veuillez entrer votre nom et prénom")
+    
+    if (!formData.firstname || !formData.lastname) {
+      toast.error("Veuillez remplir tous les champs obligatoires")
       return
     }
 
@@ -57,103 +47,99 @@ export default function RegisterPage() {
     }
 
     setIsLoading(true)
-    const username = generateUsername(formData.nom, formData.prenom)
 
     try {
-      const { data, error } = await authClient.signUp.email({
-        email: `${username}@pharmacy.local`,
-        name: `${formData.prenom} ${formData.nom}`,
+      const fullName = `${formData.firstname} ${formData.lastname}`
+      const email = `${generatedUsername}@pharmacy.local`
+
+      const { error } = await authClient.signUp.email({
+        email: email,
+        name: fullName,
         password: formData.password,
       })
 
       if (error?.code) {
-        const errorMap: Record<string, string> = {
-          USER_ALREADY_EXISTS: "Ce compte existe déjà",
+        if (error.code === "USER_ALREADY_EXISTS") {
+          toast.error("Ce nom de compte existe déjà. Veuillez choisir un autre nom.")
+        } else {
+          toast.error("Erreur lors de l'inscription")
         }
-        toast.error(errorMap[error.code] || "Erreur lors de l'inscription")
+        setIsLoading(false)
         return
       }
 
-      toast.success("Compte créé avec succès!")
-      router.push("/login?registered=true")
+      toast.success("Compte créé avec succès !")
+      setTimeout(() => {
+        router.push("/login?registered=true")
+      }, 1000)
     } catch (error) {
       console.error("Registration error:", error)
-      toast.error("Une erreur est survenue")
-    } finally {
+      toast.error("Une erreur s'est produite lors de l'inscription")
       setIsLoading(false)
     }
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-background via-primary/5 to-chart-4/10 flex items-center justify-center p-4">
-      <Card className="w-full max-w-2xl shadow-2xl border-0 animate-in fade-in zoom-in-95 duration-500">
-        <CardHeader className="space-y-3 pb-8 bg-gradient-to-r from-primary/10 via-transparent to-transparent">
-          <div className="flex items-center justify-center mb-4">
-            <div className="p-4 rounded-full bg-gradient-to-br from-primary to-chart-4 shadow-lg">
-              <Pill className="h-12 w-12 text-white" />
-            </div>
+    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-background via-background to-primary/5 p-4">
+      <Card className="w-full max-w-md shadow-2xl animate-in fade-in zoom-in-95 duration-500 border-t-4 border-t-primary">
+        <CardHeader className="space-y-2 text-center pb-6">
+          <div className="mx-auto w-16 h-16 bg-gradient-to-br from-primary to-chart-4 rounded-full flex items-center justify-center mb-2 animate-pulse-glow">
+            <UserPlus className="h-8 w-8 text-primary-foreground" />
           </div>
-          <CardTitle className="text-3xl font-bold text-center bg-gradient-to-r from-primary via-chart-4 to-primary bg-clip-text text-transparent">
-            Créer un compte
+          <CardTitle className="text-3xl font-bold bg-gradient-to-r from-primary via-chart-4 to-primary bg-clip-text text-transparent">
+            Inscription
           </CardTitle>
-          <CardDescription className="text-center text-base">
-            Inscription au système de gestion de pharmacie
+          <CardDescription className="text-base">
+            Créez votre compte pour accéder au système de gestion
           </CardDescription>
         </CardHeader>
-        <CardContent className="space-y-6 pt-6">
-          <form onSubmit={handleSubmit} className="space-y-6">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div className="space-y-2">
-                <Label htmlFor="nom" className="text-base font-semibold">
-                  Nom
-                </Label>
-                <Input
-                  id="nom"
-                  type="text"
-                  placeholder="Dupont"
-                  value={formData.nom}
-                  onChange={(e) => handleInputChange("nom", e.target.value)}
-                  disabled={isLoading}
-                  required
-                  className="h-12 text-base transition-all-smooth focus:ring-2 focus:ring-primary"
-                  autoComplete="off"
-                />
-              </div>
 
-              <div className="space-y-2">
-                <Label htmlFor="prenom" className="text-base font-semibold">
-                  Prénom
-                </Label>
-                <Input
-                  id="prenom"
-                  type="text"
-                  placeholder="Jean"
-                  value={formData.prenom}
-                  onChange={(e) => handleInputChange("prenom", e.target.value)}
-                  disabled={isLoading}
-                  required
-                  className="h-12 text-base transition-all-smooth focus:ring-2 focus:ring-primary"
-                  autoComplete="off"
-                />
-              </div>
+        <form onSubmit={handleSubmit}>
+          <CardContent className="space-y-5">
+            <div className="space-y-2">
+              <Label htmlFor="firstname" className="flex items-center gap-2">
+                <User className="h-4 w-4 text-primary" />
+                Prénom
+              </Label>
+              <Input
+                id="firstname"
+                type="text"
+                placeholder="Entrez votre prénom"
+                value={formData.firstname}
+                onChange={(e) => setFormData({ ...formData, firstname: e.target.value })}
+                disabled={isLoading}
+                required
+                className="transition-all-smooth focus:ring-2 focus:ring-primary"
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="lastname" className="flex items-center gap-2">
+                <User className="h-4 w-4 text-primary" />
+                Nom
+              </Label>
+              <Input
+                id="lastname"
+                type="text"
+                placeholder="Entrez votre nom"
+                value={formData.lastname}
+                onChange={(e) => setFormData({ ...formData, lastname: e.target.value })}
+                disabled={isLoading}
+                required
+                className="transition-all-smooth focus:ring-2 focus:ring-primary"
+              />
             </div>
 
             {generatedUsername && (
-              <div className="p-4 bg-primary/10 border-l-4 border-primary rounded-lg animate-in slide-in-from-top-2">
-                <p className="text-sm font-medium text-muted-foreground mb-1">
-                  Nom de compte généré :
-                </p>
-                <p className="text-lg font-bold text-primary">
-                  {generatedUsername}
-                </p>
-                <p className="text-xs text-muted-foreground mt-1">
-                  Utilisez ce nom pour vous connecter
-                </p>
+              <div className="p-3 bg-primary/5 border border-primary/20 rounded-lg animate-in fade-in slide-in-from-top-2">
+                <p className="text-sm text-muted-foreground mb-1">Nom de compte généré :</p>
+                <p className="text-base font-semibold text-primary">{generatedUsername}</p>
               </div>
             )}
 
             <div className="space-y-2">
-              <Label htmlFor="password" className="text-base font-semibold">
+              <Label htmlFor="password" className="flex items-center gap-2">
+                <Lock className="h-4 w-4 text-primary" />
                 Mot de passe
               </Label>
               <Input
@@ -161,71 +147,63 @@ export default function RegisterPage() {
                 type="password"
                 placeholder="Minimum 8 caractères"
                 value={formData.password}
-                onChange={(e) => handleInputChange("password", e.target.value)}
+                onChange={(e) => setFormData({ ...formData, password: e.target.value })}
                 disabled={isLoading}
                 required
-                className="h-12 text-base transition-all-smooth focus:ring-2 focus:ring-primary"
                 autoComplete="off"
+                className="transition-all-smooth focus:ring-2 focus:ring-primary"
               />
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="confirmPassword" className="text-base font-semibold">
+              <Label htmlFor="confirmPassword" className="flex items-center gap-2">
+                <Lock className="h-4 w-4 text-primary" />
                 Confirmer le mot de passe
               </Label>
               <Input
                 id="confirmPassword"
                 type="password"
-                placeholder="Retapez votre mot de passe"
+                placeholder="Confirmez votre mot de passe"
                 value={formData.confirmPassword}
-                onChange={(e) => handleInputChange("confirmPassword", e.target.value)}
+                onChange={(e) => setFormData({ ...formData, confirmPassword: e.target.value })}
                 disabled={isLoading}
                 required
-                className="h-12 text-base transition-all-smooth focus:ring-2 focus:ring-primary"
                 autoComplete="off"
+                className="transition-all-smooth focus:ring-2 focus:ring-primary"
               />
             </div>
+          </CardContent>
 
+          <CardFooter className="flex flex-col gap-4">
             <Button
               type="submit"
+              className="w-full bg-primary hover:bg-primary/90 transition-all-smooth hover:scale-105 shadow-lg"
               disabled={isLoading}
-              className="w-full h-12 text-base font-semibold bg-gradient-to-r from-primary to-chart-4 hover:opacity-90 transition-all-smooth hover:scale-[1.02] shadow-lg"
             >
               {isLoading ? (
                 <>
-                  <Loader2 className="mr-2 h-5 w-5 animate-spin" />
-                  Inscription en cours...
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Création en cours...
                 </>
               ) : (
                 <>
-                  <UserPlus className="mr-2 h-5 w-5" />
                   Créer mon compte
+                  <ArrowRight className="ml-2 h-4 w-4" />
                 </>
               )}
             </Button>
-          </form>
 
-          <div className="relative">
-            <div className="absolute inset-0 flex items-center">
-              <span className="w-full border-t" />
+            <div className="text-center text-sm">
+              <span className="text-muted-foreground">Vous avez déjà un compte ? </span>
+              <Link 
+                href="/login" 
+                className="text-primary font-semibold hover:underline transition-all-smooth"
+              >
+                Se connecter
+              </Link>
             </div>
-            <div className="relative flex justify-center text-xs uppercase">
-              <span className="bg-card px-2 text-muted-foreground">
-                Déjà inscrit ?
-              </span>
-            </div>
-          </div>
-
-          <Button
-            type="button"
-            variant="outline"
-            className="w-full h-12 text-base transition-all-smooth hover:scale-[1.02] hover:bg-primary/5"
-            onClick={() => router.push("/login")}
-            disabled={isLoading}
-          >
-            Se connecter
-          </Button>
-        </CardContent>
+          </CardFooter>
+        </form>
       </Card>
     </div>
   )

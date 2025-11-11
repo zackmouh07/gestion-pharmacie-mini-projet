@@ -2,14 +2,15 @@
 
 import { useState, useEffect } from "react"
 import { useRouter, useSearchParams } from "next/navigation"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Checkbox } from "@/components/ui/checkbox"
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
 import { authClient } from "@/lib/auth-client"
 import { toast } from "sonner"
-import { Loader2, LogIn, Pill } from "lucide-react"
+import { Loader2, User, Lock, LogIn, ArrowRight } from "lucide-react"
+import Link from "next/link"
 
 export default function LoginPage() {
   const router = useRouter()
@@ -23,13 +24,13 @@ export default function LoginPage() {
 
   useEffect(() => {
     if (searchParams.get("registered") === "true") {
-      toast.success("Inscription réussie! Connectez-vous maintenant.")
+      toast.success("Compte créé avec succès ! Vous pouvez maintenant vous connecter.")
     }
   }, [searchParams])
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-
+    
     if (!formData.username || !formData.password) {
       toast.error("Veuillez remplir tous les champs")
       return
@@ -38,80 +39,86 @@ export default function LoginPage() {
     setIsLoading(true)
 
     try {
-      const { data, error } = await authClient.signIn.email({
-        email: `${formData.username}@pharmacy.local`,
+      const email = `${formData.username}@pharmacy.local`
+
+      const { error } = await authClient.signIn.email({
+        email: email,
         password: formData.password,
         rememberMe: formData.rememberMe,
-        callbackURL: "/"
+        callbackURL: "/",
       })
 
       if (error?.code) {
         toast.error("Nom de compte ou mot de passe incorrect. Veuillez vérifier vos informations.")
+        setIsLoading(false)
         return
       }
 
-      toast.success("Connexion réussie!")
-      router.push("/")
+      toast.success("Connexion réussie !")
+      
+      setTimeout(() => {
+        router.push("/")
+        router.refresh()
+      }, 500)
     } catch (error) {
       console.error("Login error:", error)
-      toast.error("Une erreur est survenue lors de la connexion")
-    } finally {
+      toast.error("Une erreur s'est produite lors de la connexion")
       setIsLoading(false)
     }
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-background via-primary/5 to-chart-4/10 flex items-center justify-center p-4">
-      <Card className="w-full max-w-xl shadow-2xl border-0 animate-in fade-in zoom-in-95 duration-500">
-        <CardHeader className="space-y-3 pb-8 bg-gradient-to-r from-primary/10 via-transparent to-transparent">
-          <div className="flex items-center justify-center mb-4">
-            <div className="p-4 rounded-full bg-gradient-to-br from-primary to-chart-4 shadow-lg">
-              <Pill className="h-12 w-12 text-white" />
-            </div>
+    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-background via-background to-primary/5 p-4">
+      <Card className="w-full max-w-md shadow-2xl animate-in fade-in zoom-in-95 duration-500 border-t-4 border-t-primary">
+        <CardHeader className="space-y-2 text-center pb-6">
+          <div className="mx-auto w-16 h-16 bg-gradient-to-br from-primary to-chart-4 rounded-full flex items-center justify-center mb-2 animate-pulse-glow">
+            <LogIn className="h-8 w-8 text-primary-foreground" />
           </div>
-          <CardTitle className="text-3xl font-bold text-center bg-gradient-to-r from-primary via-chart-4 to-primary bg-clip-text text-transparent">
+          <CardTitle className="text-3xl font-bold bg-gradient-to-r from-primary via-chart-4 to-primary bg-clip-text text-transparent">
             Connexion
           </CardTitle>
-          <CardDescription className="text-center text-base">
-            Accédez au système de gestion de pharmacie
+          <CardDescription className="text-base">
+            Connectez-vous à votre compte pour accéder au système
           </CardDescription>
         </CardHeader>
-        <CardContent className="space-y-6 pt-6">
-          <form onSubmit={handleSubmit} className="space-y-6">
+
+        <form onSubmit={handleSubmit}>
+          <CardContent className="space-y-5">
             <div className="space-y-2">
-              <Label htmlFor="username" className="text-base font-semibold">
+              <Label htmlFor="username" className="flex items-center gap-2">
+                <User className="h-4 w-4 text-primary" />
                 Nom de compte
               </Label>
               <Input
                 id="username"
                 type="text"
-                placeholder="dupontjean"
+                placeholder="Ex: dupontjean"
                 value={formData.username}
                 onChange={(e) => setFormData({ ...formData, username: e.target.value })}
                 disabled={isLoading}
                 required
-                className="h-12 text-base transition-all-smooth focus:ring-2 focus:ring-primary"
-                autoComplete="off"
+                className="transition-all-smooth focus:ring-2 focus:ring-primary"
               />
               <p className="text-xs text-muted-foreground">
-                Format: nom + prénom (sans espace)
+                Format: prénom + nom (sans espaces, en minuscules)
               </p>
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="password" className="text-base font-semibold">
+              <Label htmlFor="password" className="flex items-center gap-2">
+                <Lock className="h-4 w-4 text-primary" />
                 Mot de passe
               </Label>
               <Input
                 id="password"
                 type="password"
-                placeholder="Votre mot de passe"
+                placeholder="Entrez votre mot de passe"
                 value={formData.password}
                 onChange={(e) => setFormData({ ...formData, password: e.target.value })}
                 disabled={isLoading}
                 required
-                className="h-12 text-base transition-all-smooth focus:ring-2 focus:ring-primary"
                 autoComplete="off"
+                className="transition-all-smooth focus:ring-2 focus:ring-primary"
               />
             </div>
 
@@ -131,47 +138,38 @@ export default function LoginPage() {
                 Se souvenir de moi
               </Label>
             </div>
+          </CardContent>
 
+          <CardFooter className="flex flex-col gap-4">
             <Button
               type="submit"
+              className="w-full bg-primary hover:bg-primary/90 transition-all-smooth hover:scale-105 shadow-lg"
               disabled={isLoading}
-              className="w-full h-12 text-base font-semibold bg-gradient-to-r from-primary to-chart-4 hover:opacity-90 transition-all-smooth hover:scale-[1.02] shadow-lg"
             >
               {isLoading ? (
                 <>
-                  <Loader2 className="mr-2 h-5 w-5 animate-spin" />
-                  Connexion en cours...
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Connexion...
                 </>
               ) : (
                 <>
-                  <LogIn className="mr-2 h-5 w-5" />
                   Se connecter
+                  <ArrowRight className="ml-2 h-4 w-4" />
                 </>
               )}
             </Button>
-          </form>
 
-          <div className="relative">
-            <div className="absolute inset-0 flex items-center">
-              <span className="w-full border-t" />
+            <div className="text-center text-sm">
+              <span className="text-muted-foreground">Vous n&apos;avez pas de compte ? </span>
+              <Link 
+                href="/register" 
+                className="text-primary font-semibold hover:underline transition-all-smooth"
+              >
+                Créer un compte
+              </Link>
             </div>
-            <div className="relative flex justify-center text-xs uppercase">
-              <span className="bg-card px-2 text-muted-foreground">
-                Pas encore de compte ?
-              </span>
-            </div>
-          </div>
-
-          <Button
-            type="button"
-            variant="outline"
-            className="w-full h-12 text-base transition-all-smooth hover:scale-[1.02] hover:bg-primary/5"
-            onClick={() => router.push("/register")}
-            disabled={isLoading}
-          >
-            Créer un compte
-          </Button>
-        </CardContent>
+          </CardFooter>
+        </form>
       </Card>
     </div>
   )
