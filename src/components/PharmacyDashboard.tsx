@@ -1,7 +1,6 @@
 "use client"
 
 import { useEffect, useState } from "react"
-import { useRouter } from "next/navigation"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import {
   Table,
@@ -27,10 +26,9 @@ import {
 import { Badge } from "@/components/ui/badge"
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Progress } from "@/components/ui/progress"
-import { Plus, Search, Pencil, Trash2, Loader2, Package, AlertTriangle, TrendingUp, ShoppingCart, Moon, Sun, Activity, LogOut, User } from "lucide-react"
+import { Plus, Search, Pencil, Trash2, Loader2, Package, AlertTriangle, TrendingUp, ShoppingCart, Moon, Sun, Activity } from "lucide-react"
 import { Skeleton } from "@/components/ui/skeleton"
 import { toast } from "sonner"
-import { authClient, useSession } from "@/lib/auth-client"
 
 interface Medication {
   id: number
@@ -45,8 +43,6 @@ interface Medication {
 type FilterStatus = "all" | "expired" | "low-stock" | "in-stock"
 
 export function PharmacyDashboard() {
-  const router = useRouter()
-  const { data: session, isPending: sessionLoading, refetch } = useSession()
   const [medications, setMedications] = useState<Medication[]>([])
   const [filteredMedications, setFilteredMedications] = useState<Medication[]>([])
   const [isLoading, setIsLoading] = useState(true)
@@ -58,13 +54,6 @@ export function PharmacyDashboard() {
   const [medicationToDelete, setMedicationToDelete] = useState<Medication | null>(null)
   const [isDeleting, setIsDeleting] = useState(false)
   const [darkMode, setDarkMode] = useState(false)
-
-  // Check authentication
-  useEffect(() => {
-    if (!sessionLoading && !session?.user) {
-      router.push("/login")
-    }
-  }, [session, sessionLoading, router])
 
   useEffect(() => {
     // Check for saved theme preference or default to system
@@ -80,26 +69,6 @@ export function PharmacyDashboard() {
     setDarkMode(newDarkMode)
     document.documentElement.classList.toggle("dark", newDarkMode)
     localStorage.setItem("theme", newDarkMode ? "dark" : "light")
-  }
-
-  const handleSignOut = async () => {
-    const token = localStorage.getItem("bearer_token")
-    const { error } = await authClient.signOut({
-      fetchOptions: {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      },
-    })
-    
-    if (error?.code) {
-      toast.error("Erreur lors de la déconnexion")
-    } else {
-      localStorage.removeItem("bearer_token")
-      refetch()
-      toast.success("Déconnecté avec succès")
-      router.push("/login")
-    }
   }
 
   const fetchMedications = async () => {
@@ -121,10 +90,8 @@ export function PharmacyDashboard() {
   }
 
   useEffect(() => {
-    if (session?.user) {
-      fetchMedications()
-    }
-  }, [session])
+    fetchMedications()
+  }, [])
 
   useEffect(() => {
     let filtered = medications
@@ -257,20 +224,6 @@ export function PharmacyDashboard() {
     }).format(price)
   }
 
-  // Show loading while checking session
-  if (sessionLoading) {
-    return (
-      <div className="min-h-screen bg-gradient-to-br from-background via-background to-primary/5 flex items-center justify-center">
-        <Loader2 className="h-12 w-12 animate-spin text-primary" />
-      </div>
-    )
-  }
-
-  // Don't render if not authenticated
-  if (!session?.user) {
-    return null
-  }
-
   return (
     <div className="min-h-screen bg-gradient-to-br from-background via-background to-primary/5">
       <div className="container mx-auto py-8 px-4 max-w-[1600px]">
@@ -284,10 +237,6 @@ export function PharmacyDashboard() {
             </p>
           </div>
           <div className="flex items-center gap-3">
-            <div className="flex items-center gap-2 px-4 py-2 rounded-lg bg-primary/10 border border-primary/20">
-              <User className="h-5 w-5 text-primary" />
-              <span className="font-semibold text-primary">{session.user.name}</span>
-            </div>
             <Button
               variant="outline"
               size="icon"
@@ -299,14 +248,6 @@ export function PharmacyDashboard() {
               ) : (
                 <Moon className="h-5 w-5" />
               )}
-            </Button>
-            <Button
-              variant="outline"
-              onClick={handleSignOut}
-              className="transition-all-smooth hover:scale-105 hover:bg-destructive/10 hover:text-destructive hover:border-destructive"
-            >
-              <LogOut className="h-4 w-4 mr-2" />
-              Déconnexion
             </Button>
           </div>
         </div>
