@@ -8,6 +8,13 @@
       "when": 1762504296143,
       "tag": "0000_smooth_jigsaw",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "6",
+      "when": 1762845770728,
+      "tag": "0001_oval_lizard",
+      "breakpoints": true
     }
   ]
 }
