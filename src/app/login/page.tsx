@@ -62,7 +62,6 @@ export default function LoginPage() {
         email: email,
         password: formData.password,
         rememberMe: formData.rememberMe,
-        callbackURL: "/",
       })
 
       if (error?.code) {
@@ -73,10 +72,8 @@ export default function LoginPage() {
 
       toast.success("Connexion réussie !")
       
-      setTimeout(() => {
-        router.push("/")
-        router.refresh()
-      }, 500)
+      // Use window.location for full page reload to ensure session is properly loaded
+      window.location.href = "/"
     } catch (error) {
       console.error("Login error:", error)
       toast.error("Une erreur s'est produite lors de la connexion")
