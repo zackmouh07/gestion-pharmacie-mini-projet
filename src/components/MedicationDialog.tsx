@@ -198,12 +198,12 @@ export function MedicationDialog({
                 }}
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel className="text-sm font-semibold">Prix (€) *</FormLabel>
+                    <FormLabel className="text-sm font-semibold">Prix (DA) *</FormLabel>
                     <FormControl>
                       <Input
                         type="number"
                         step="0.01"
-                        placeholder="5.50"
+                        placeholder="550.00"
                         {...field}
                         onChange={(e) =>
                           field.onChange(parseFloat(e.target.value) || 0)

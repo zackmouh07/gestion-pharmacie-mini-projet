@@ -74,3 +74,16 @@ export const verification = sqliteTable("verification", {
     () => new Date(),
   ),
 });
+
+export const ventes = sqliteTable('ventes', {
+  id: integer('id').primaryKey({ autoIncrement: true }),
+  medicamentId: integer('medicament_id').references(() => medicaments.id).notNull(),
+  nomMedicament: text('nom_medicament').notNull(),
+  quantiteVendue: integer('quantite_vendue').notNull(),
+  prixUnitaire: real('prix_unitaire').notNull(),
+  prixTotal: real('prix_total').notNull(),
+  nomClient: text('nom_client'),
+  dateVente: text('date_vente').notNull(),
+  createdAt: text('created_at').notNull(),
+  updatedAt: text('updated_at').notNull(),
+});

@@ -27,10 +27,12 @@ import {
 import { Badge } from "@/components/ui/badge"
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Progress } from "@/components/ui/progress"
-import { Plus, Search, Pencil, Trash2, Loader2, Package, AlertTriangle, TrendingUp, ShoppingCart, Moon, Sun, Activity, LogOut, User } from "lucide-react"
+import { Plus, Search, Pencil, Trash2, Loader2, Package, AlertTriangle, TrendingUp, ShoppingCart, Moon, Sun, Activity, LogOut, User, Receipt } from "lucide-react"
 import { Skeleton } from "@/components/ui/skeleton"
 import { toast } from "sonner"
 import { authClient, useSession } from "@/lib/auth-client"
+import { VenteDialog } from "@/components/VenteDialog"
+import Link from "next/link"
 
 interface Medication {
   id: number
@@ -59,6 +61,7 @@ export function PharmacyDashboard() {
   const [medicationToDelete, setMedicationToDelete] = useState<Medication | null>(null)
   const [isDeleting, setIsDeleting] = useState(false)
   const [darkMode, setDarkMode] = useState(false)
+  const [venteDialogOpen, setVenteDialogOpen] = useState(false)
 
   // Check authentication
   useEffect(() => {
@@ -251,10 +254,10 @@ export function PharmacyDashboard() {
   }
 
   const formatPrice = (price: number) => {
-    return new Intl.NumberFormat("fr-FR", {
-      style: "currency",
-      currency: "EUR",
-    }).format(price)
+    return new Intl.NumberFormat("fr-DZ", {
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2,
+    }).format(price) + " DA"
   }
 
   if (sessionLoading) {
@@ -298,6 +301,15 @@ export function PharmacyDashboard() {
                 <Moon className="h-5 w-5" />
               )}
             </Button>
+            <Link href="/ventes">
+              <Button
+                variant="outline"
+                className="transition-all-smooth hover:scale-105 hover:bg-chart-2/10 hover:border-chart-2"
+              >
+                <Receipt className="h-4 w-4 mr-2" />
+                Historique
+              </Button>
+            </Link>
             <Button
               variant="outline"
               onClick={handleSignOut}
@@ -388,10 +400,20 @@ export function PharmacyDashboard() {
                   {filteredMedications.length} médicament(s) affiché(s)
                 </CardDescription>
               </div>
-              <Button onClick={handleAddClick} className="sm:w-auto bg-primary hover:bg-primary/90 transition-all-smooth hover:scale-105 shadow-lg">
-                <Plus className="mr-2 h-4 w-4" />
-                Ajouter un médicament
-              </Button>
+              <div className="flex gap-2">
+                <Button 
+                  onClick={() => setVenteDialogOpen(true)} 
+                  variant="outline"
+                  className="sm:w-auto bg-chart-2/10 hover:bg-chart-2/20 border-chart-2/30 hover:border-chart-2 text-chart-2 transition-all-smooth hover:scale-105 shadow-lg"
+                >
+                  <ShoppingCart className="mr-2 h-4 w-4" />
+                  Nouvelle vente
+                </Button>
+                <Button onClick={handleAddClick} className="sm:w-auto bg-primary hover:bg-primary/90 transition-all-smooth hover:scale-105 shadow-lg">
+                  <Plus className="mr-2 h-4 w-4" />
+                  Ajouter un médicament
+                </Button>
+              </div>
             </div>
           </CardHeader>
           <CardContent className="pt-6">
@@ -509,6 +531,13 @@ export function PharmacyDashboard() {
           open={dialogOpen}
           onOpenChange={setDialogOpen}
           medication={selectedMedication}
+          onSuccess={fetchMedications}
+        />
+
+        <VenteDialog
+          open={venteDialogOpen}
+          onOpenChange={setVenteDialogOpen}
+          medications={medications}
           onSuccess={fetchMedications}
         />
 

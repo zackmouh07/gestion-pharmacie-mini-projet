@@ -9,13 +9,14 @@ import { Checkbox } from "@/components/ui/checkbox"
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
 import { authClient } from "@/lib/auth-client"
 import { toast } from "sonner"
-import { Loader2, User, Lock, LogIn, ArrowRight, Pill, Sparkles } from "lucide-react"
+import { Loader2, User, Lock, LogIn, ArrowRight, Pill, Sparkles, Moon, Sun } from "lucide-react"
 import Link from "next/link"
 
 export default function LoginPage() {
   const router = useRouter()
   const searchParams = useSearchParams()
   const [isLoading, setIsLoading] = useState(false)
+  const [darkMode, setDarkMode] = useState(false)
   const [formData, setFormData] = useState({
     username: "",
     password: "",
@@ -23,10 +24,26 @@ export default function LoginPage() {
   })
 
   useEffect(() => {
+    // Check for saved theme preference
+    const savedTheme = localStorage.getItem("theme")
+    const prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches
+    const shouldBeDark = savedTheme === "dark" || (!savedTheme && prefersDark)
+    setDarkMode(shouldBeDark)
+    document.documentElement.classList.toggle("dark", shouldBeDark)
+  }, [])
+
+  useEffect(() => {
     if (searchParams.get("registered") === "true") {
       toast.success("Compte créé avec succès ! Vous pouvez maintenant vous connecter.")
     }
   }, [searchParams])
+
+  const toggleDarkMode = () => {
+    const newDarkMode = !darkMode
+    setDarkMode(newDarkMode)
+    document.documentElement.classList.toggle("dark", newDarkMode)
+    localStorage.setItem("theme", newDarkMode ? "dark" : "light")
+  }
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -73,6 +90,20 @@ export default function LoginPage() {
       <div className="absolute inset-0 bg-gradient-to-br from-primary/5 via-chart-4/5 to-chart-2/5 animate-gradient-slow" />
       <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_120%,rgba(120,119,198,0.1),rgba(255,255,255,0))]" />
       
+      {/* Dark Mode Toggle - Floating Button */}
+      <Button
+        variant="outline"
+        size="icon"
+        onClick={toggleDarkMode}
+        className="fixed top-6 right-6 z-50 rounded-full transition-all-smooth hover:scale-110 shadow-lg glass-effect"
+      >
+        {darkMode ? (
+          <Sun className="h-5 w-5 text-yellow-500" />
+        ) : (
+          <Moon className="h-5 w-5 text-primary" />
+        )}
+      </Button>
+
       {/* Floating Pills Animation */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
         <Pill className="absolute top-20 left-10 w-8 h-8 text-primary/10 animate-float" style={{ animationDelay: "0s" }} />
